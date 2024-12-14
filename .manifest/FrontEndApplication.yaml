@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: front-end-app
+  labels:
+    app: front-end-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: front-end-app
+  template:
+    metadata:
+      name: front-end-app
+      labels:
+        app: front-end-app
+    spec:
+      containers:
+        - name: front-end-app
+          args:
+            - "0.0.0.0"
+          image: todolist/front-end
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 4173
+              protocol: TCP
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: front-end-app
+  name: front-end-app
+  namespace: default
+spec:
+  clusterIP: 10.110.32.235
+  clusterIPs:
+    - 10.110.32.235
+  ports:
+    - nodePort: 31886
+      port: 8000
+      protocol: TCP
+      targetPort: 4173
+  selector:
+    app: front-end-app
+  type: NodePort

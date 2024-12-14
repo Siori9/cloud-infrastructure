@@ -1,0 +1,78 @@
+services:
+  frontend:
+    container_name: todolist_frontend
+    image: todolist/frontend
+    build:
+      context: ./todolist-front
+      args:
+        BACKEND_HOST: localhost:4242
+    ports:
+      - "4200:4173"
+    depends_on:
+      - ingress
+
+  ingress:
+    container_name: todolist_ingress
+    image: clevercloud/sozu:d7b23c9fe877394cc3f2130d2fe5e76274dbf6c0
+    networks:
+      - backend
+    ports:
+      - "4242:80"
+    configs:
+      - source: sozu
+        target: /etc/sozu/config.toml
+
+  backend0:
+    container_name: todolist_backend-0
+    image: todolist/backend
+    build:
+      context: ./todolist
+      dockerfile: ./src/main/docker/Dockerfile.jvm
+    networks:
+      backend:
+        ipv4_address: 10.82.1.100
+    depends_on:
+      - database
+
+  backend1:
+    container_name: todolist_backend-1
+    image: todolist/backend
+    build:
+      context: ./todolist
+      dockerfile: ./src/main/docker/Dockerfile.jvm
+    networks:
+      backend:
+        ipv4_address: 10.82.1.101
+    depends_on:
+      - database
+
+  database:
+    image: mongo
+    networks:
+      - backend
+    hostname: db
+    volumes:
+      - mongo-data:/data/db
+
+networks:
+  frontend:
+    name: br0
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.82.0.0/24
+          gateway: 10.82.0.1
+  backend:
+    name: br1
+    ipam:
+      driver: default
+      config:
+        - subnet: 10.82.1.0/24
+          gateway: 10.82.1.1
+
+volumes:
+  mongo-data:
+
+configs:
+  sozu:
+    file: ./config.toml

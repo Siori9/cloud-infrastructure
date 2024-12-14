@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: back-end-app
+  labels:
+    app: back-end-app
+  deletionGracePeriodSeconds: 5
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: back-end-app
+  template:
+    metadata:
+      name: back-end-app
+      labels:
+        app: back-end-app
+    spec:
+      containers:
+        - name: back-end-app
+          image: todolist/back-end
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          env:
+            - name: MONGODB_URI
+              valueFrom:
+                secretKeyRef:
+                  name: todolist-mongodb-todolist-siori
+                  key: connectionString.standard
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: back-end-app
+  name: back-end-app
+  namespace: default
+spec:
+  allocateLoadBalancerNodePorts: true
+  clusterIP: 10.100.84.135
+  clusterIPs:
+    - 10.100.84.135
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+    - nodePort: 32608
+      port: 80
+      protocol: TCP
+      targetPort: 8080
+  selector:
+    app: back-end-app
+  sessionAffinity: None
+  type: LoadBalancer
